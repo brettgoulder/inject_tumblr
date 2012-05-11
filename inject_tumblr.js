@@ -1,13 +1,18 @@
 (function(jq){  
-
+  "use strict";
   jq.fn.inject_tumblr = function(options) {
-
+    
+    
     var required = [
       'api_key',
       'tumblr_id'
-    ]
-    for (i=0; i<required.length; i++) {
-      if (options[required[i]] == null && options.data[required[i]] == null) {
+    ];
+
+    var element = this;
+    var posts = [];
+
+    for (var i=0; i<required.length; i++) {
+      if (options[required[i]] === null && options.data[required[i]] === null) {
         throw new Error('inject_tumblr: ' + required[i] + ' is required');
       }
     }
@@ -20,13 +25,12 @@
       generate_error(options.down_template);
     }, options.timeout);
 
-    var get_posts = function() {
+    function get_posts() {
       jq.ajax({
         url: 'http://api.tumblr.com/v2/blog/'+options.tumblr_id+'.tumblr.com/posts',
         //crossDomain: true,
         dataType: 'jsonp',
         jsonp: 'jsonp',
-        context: this,
         success: function(data) {
           handle_response(data);
         },
@@ -34,14 +38,14 @@
       });
     }
 
-    var enhance_post = function(post) {
+    function enhance_post(post) {
 
-      post.date = new Date(parseInt(post.timestamp*1000));
+      post.date = new Date(parseInt(post.timestamp*1000, 10));
       post.iso_date = post.date.toISOString();
       post.human_date = post.date.toDateString();
       post.year = post.date.getFullYear();
     
-      if (post.type == 'text') {
+      if (post.type === 'text') {
         post.body = '<div>'+post.body+'</div>';
 
         post.first_picture = (function(){
@@ -55,7 +59,7 @@
         })();
       }
 
-      if (post.type == 'link') {
+      if (post.type === 'link') {
         post.body = '<div>'+post.description+'</div>';
         post.blurb = (function(){
           var blurb = document.createElement('div');
@@ -67,10 +71,10 @@
       return post;
     }
 
-    var generate_error = function(template) {
-      if (! error) {
+    function generate_error(template) {
+      if (!error) {
 
-        if (options.loading_msg != null) {
+        if (options.loading_msg !== null) {
           jq(options.loading_msg).remove();
         }
 
@@ -79,20 +83,15 @@
       }
     }
 
-    var element = this;
-    var posts = [];
+    function handle_response(result){
 
-    get_posts();
+      if (!error) {
 
-    var handle_response = function(result){
-
-      if (! error) {
-
-        if (result.meta.status != 200) {
+        if (result.meta.status !== 200) {
           generate_error(options.down_template);
         }
 
-        else if (result.response.posts.length == 0) {
+        else if (result.response.posts.length === 0) {
           generate_error(options.no_posts_template);
         }
 
@@ -100,7 +99,7 @@
 
           window.clearTimeout(enforce_timeout);
 
-          if (options.loading_msg != null) {
+          if (options.loading_msg !== null) {
             jq(options.loading_msg).remove();
           }
 
@@ -109,13 +108,13 @@
           jq(posts).map(function() { 
             var post = this;
 
-            if (options.post_type != null && post.type != options.post_type) {
+            if (options.post_type !== null && post.type !== options.post_type) {
               return null;
             }
 
             post = enhance_post(post);
 
-            if (options.templatize == true) {
+            if (options.templatize === true) {
               post = Mustache.render(options.post_template, post);
             }
 
@@ -125,11 +124,11 @@
           });
         }
       }
-    };
+    }
 
     return element;
 
-  }
+  };
 
   jq.fn.inject_tumblr.post_template = '<article><figure><a href="{{post_url}}"><img src="{{first_picture}}"></a></figure><div><h3><a href="{{post_url}}">{{title}}</a></h3><time datetime="{{iso_date}}">{{human_date}}</time>{{{blurb}}}<a href="{{post_url}}">More &raquo;</a></div></article>';
   jq.fn.inject_tumblr.down_template = '<article><h3>Uh oh..</h3><div>It looks like tumblr is down right now. Please refresh your browser window in a little while.</div></article>';
@@ -150,7 +149,7 @@
       limit: 10,
       filter: ''
     }
-  }
+  };
 
   
 
